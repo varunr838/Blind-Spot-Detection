@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Assistance System</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #1c1c1c;
+        color: white;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+    h1 {
+        margin: 20px;
+    }
+    .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        justify-items: center;
+        margin: 20px auto;
+        max-width: 900px;
+    }
+    .view-box {
+        width: 350px;
+        height: 200px;
+        background-color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        border: 2px solid #555;
+        font-weight: bold;
+        font-size: 20px;
+        transition: all 0.5s ease;
+    }
+    #rearView, #birdView {
+        display: none;
+        width: 750px;
+        height: 300px;
+        margin: 20px auto;
+        background-color: #444;
+        border-radius: 10px;
+        border: 2px solid #777;
+        line-height: 300px;
+        font-size: 22px;
+    }
+    .controls {
+        margin: 20px auto;
+        max-width: 800px;
+    }
+    button {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 12px 18px;
+        margin: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    .volume-control, .test-features {
+        margin-top: 15px;
+    }
+    h2, h3 {
+        margin: 15px 0 10px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Car Assistance System GUI</h1>
+
+<div class="container">
+    <div id="aPillarLeft" class="view-box">A Pillar Left</div>
+    <div id="aPillarRight" class="view-box">A Pillar Right</div>
+    <div id="bPillarLeft" class="view-box">B Pillar Left</div>
+    <div id="bPillarRight" class="view-box">B Pillar Right</div>
+</div>
+
+<div id="rearView">Rear View Camera</div>
+<div id="birdView">Bird's Eye View</div>
+
+<div class="controls">
+    <h2>Audio Controls</h2>
+    <div class="volume-control">
+        <button onclick="playAlert()">Test Alert</button>
+        <button onclick="changeVolume('up')">Volume +</button>
+        <button onclick="changeVolume('down')">Volume -</button>
+        <button onclick="customizeAlert()">Customize Alert</button>
+    </div>
+
+    <h2>Test Features</h2>
+    <div class="test-features">
+        <button onclick="activateLeftLaneChange()">Left Lane Change</button>
+        <button onclick="activateRightLaneChange()">Right Lane Change</button>
+        <button onclick="showParkingView()">Parking Mode</button>
+        <button onclick="resetView()">Reset View</button>
+    </div>
+</div>
+
+<script>
+    let audio = new Audio();
+    audio.src = "https://www.soundjay.com/button/beep-07.wav";
+    audio.volume = 0.5;
+
+    function activateLeftLaneChange() {
+        hideAll();
+        document.getElementById("aPillarLeft").style.display = "flex";
+        document.getElementById("bPillarLeft").style.display = "flex";
+        document.getElementById("rearView").style.display = "block";
+        playAlert("Caution, a motorcycle is approaching on the left!");
+    }
+
+    function activateRightLaneChange() {
+        hideAll();
+        document.getElementById("aPillarRight").style.display = "flex";
+        document.getElementById("bPillarRight").style.display = "flex";
+        document.getElementById("rearView").style.display = "block";
+        playAlert("Caution, a car is approaching on the right!");
+    }
+
+    function showParkingView() {
+        hideAll();
+        document.getElementById("birdView").style.display = "block";
+    }
+
+    function resetView() {
+        document.getElementById("aPillarLeft").style.display = "flex";
+        document.getElementById("aPillarRight").style.display = "flex";
+        document.getElementById("bPillarLeft").style.display = "flex";
+        document.getElementById("bPillarRight").style.display = "flex";
+        document.getElementById("rearView").style.display = "none";
+        document.getElementById("birdView").style.display = "none";
+    }
+
+    function hideAll() {
+        document.getElementById("aPillarLeft").style.display = "none";
+        document.getElementById("aPillarRight").style.display = "none";
+        document.getElementById("bPillarLeft").style.display = "none";
+        document.getElementById("bPillarRight").style.display = "none";
+        document.getElementById("rearView").style.display = "none";
+        document.getElementById("birdView").style.display = "none";
+    }
+
+    function playAlert(message="Caution, a vehicle is approaching!") {
+        alert(message);
+        audio.play();
+    }
+
+    function changeVolume(direction) {
+        if (direction === 'up' && audio.volume < 1) audio.volume += 0.1;
+        if (direction === 'down' && audio.volume > 0) audio.volume -= 0.1;
+        alert("Current Volume: " + Math.round(audio.volume * 100) + "%");
+    }
+
+    function customizeAlert() {
+        let newSound = prompt("Enter a custom sound URL:", audio.src);
+        if (newSound) {
+            audio.src = newSound;
+            alert("Alert sound updated!");
+        }
+    }
+</script>
+
+</body>
+</html>
