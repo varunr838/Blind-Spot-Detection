@@ -37,10 +37,10 @@ def get_top_down_view(image, src_points):
 # --- Main Execution ---
 if __name__ == "__main__":
     # --- 1. Load your four images ---
-    front_img = cv2.imread("car_images/front.jpeg")
-    back_img = cv2.imread("car_images/back.jpeg")
-    left_img = cv2.imread("car_images/left.jpeg")
-    right_img = cv2.imread("car_images/right.jpeg")
+    front_img = cv2.imread("car_images/front_view.jpg")
+    back_img = cv2.imread("car_images/back_view.jpg")
+    left_img = cv2.imread("car_images/left_view.jpg")
+    right_img = cv2.imread("car_images/right_view.jpg")
 
     # --- 2. DEFINE YOUR PERSPECTIVE POINTS (CRITICAL STEP!) ---
     # These are placeholder values! You MUST find the correct points for YOUR cameras.
@@ -49,16 +49,16 @@ if __name__ == "__main__":
     
     # Example points for the FRONT camera
     # You need to find these by looking at your front_img
-    src_front = np.float32([(470, 377), (838, 387), (1158, 557), (10, 524)])
+    src_front = np.float32([(9, 309), (1264, 343), (1132, 705), (231, 708)])
 
     # Example points for the BACK camera (coordinates will be different)
-    src_back = np.float32([(215, 114), (1049, 114), (1126, 687), (122, 683)])
+    src_back = np.float32([(34, 346), (1242, 320), (1045, 709), (261, 708)])
 
     # Example points for the LEFT camera
-    src_left = np.float32([(360, 372), (991, 352), (1278, 708), (75, 704)])
+    src_left = np.float32([(11, 359), (1258, 333), (1080, 709), (297, 713)])
 
     # Example points for the RIGHT camera
-    src_right = np.float32([(335, 386), (956, 366), (1277, 715), (41, 713)])
+    src_right = np.float32([(36, 360), (1201, 339), (1113, 712), (265, 715)])
 
     # --- 3. Apply the top-down warp to each image ---
     front_top_down = get_top_down_view(front_img, src_front)
@@ -70,52 +70,84 @@ if __name__ == "__main__":
     cv2.imwrite("back-top-down.jpeg",back_top_down)
 
 
-    # --- 4. Combine the images into a single bird's-eye view ---
-    # Define the size of the final output image and car area
-#     output_width = 800  # left_w + right_w
-#     output_height = 800 # front_h + back_h
-#     car_area_width = 200
-#     car_area_height = 300
+# --- 4. Combine the images into a single bird's-eye view ---
+def create_vertical_gradient_mask(height, width):
+    """Creates a mask with a vertical gradient (white at top, black at bottom)."""
+    mask = np.zeros((height, width, 3), dtype=np.float32)
+    # Create a linear gradient from 1.0 to 0.0
+    gradient = np.linspace(1, 0, height, dtype=np.float32)
+    # Apply the gradient to all columns and color channels
+    mask[:, :, 0] = gradient[:, np.newaxis]
+    mask[:, :, 1] = gradient[:, np.newaxis]
+    mask[:, :, 2] = gradient[:, np.newaxis]
+    return mask
 
-#     # Create a black canvas
-#     birds_eye_view = np.zeros((output_height, output_width, 3), dtype=np.uint8)
+# --- 4. Combine the images into a single bird's-eye view ---
+# Get dimensions of the warped images (assuming they are all 400x400)
+h, w = front_top_down.shape[:2]
 
-#     # Get dimensions of the warped images
-#     front_h, front_w = front_top_down.shape[:2]
-#     back_h, back_w = back_top_down.shape[:2]
-#     left_h, left_w = left_top_down.shape[:2]
-#     right_h, right_w = right_top_down.shape[:2]
-    
-#     # --- Place the warped images onto the canvas ---
-#     # Note: These calculations assume warped images are 400x400 as defined in the function
-#     x_offset = (output_width - car_area_width) // 2
-#     y_offset = (output_height - car_area_height) // 2
+# Define the car area size
+car_area_width = 200
+car_area_height = 300
 
-#     # Place FRONT image
-#     birds_eye_view[y_offset - front_h : y_offset, x_offset : x_offset + front_w] = front_top_down
+# Calculate the output size dynamically
+output_width = w + car_area_width + w
+output_height = h + car_area_height + h
 
-#     # Place BACK image (it needs to be flipped 180 degrees)
-#     back_flipped = cv2.rotate(back_top_down, cv2.ROTATE_180)
-#     birds_eye_view[y_offset + car_area_height : y_offset + car_area_height + back_h, x_offset : x_offset + back_w] = back_flipped
-    
-#     # Place LEFT image (it needs to be rotated)
-#     left_rotated = cv2.rotate(left_top_down, cv2.ROTATE_90_COUNTERCLOCKWISE)
-#     birds_eye_view[y_offset : y_offset + left_h, x_offset - left_w : x_offset] = left_rotated
+# --- NEW: Create the gradient masks ---
+# This mask fades from top (1.0) to bottom (0.0). We'll reuse it for all views.
+mask = create_vertical_gradient_mask(h, w)
 
-#     # Place RIGHT image (it needs to be rotated)
-#     right_rotated = cv2.rotate(right_top_down, cv2.ROTATE_90_CLOCKWISE)
-#     birds_eye_view[y_offset : y_offset + right_h, x_offset + car_area_width : x_offset + car_area_width + right_w] = right_rotated
+# --- Apply masks to the top-down views ---
+# We convert to float for multiplication and back to uint8 for display
+front_masked = cv2.multiply(front_top_down.astype(np.float32), mask).astype(np.uint8)
+back_masked = cv2.multiply(back_top_down.astype(np.float32), mask).astype(np.uint8)
+left_masked = cv2.multiply(left_top_down.astype(np.float32), mask).astype(np.uint8)
+right_masked = cv2.multiply(right_top_down.astype(np.float32), mask).astype(np.uint8)
 
-#     # --- Optional: Add a car icon in the middle ---
-#     car_icon = cv2.imread("car_icon.png") # Make sure you have this image
-#     if car_icon is not None:
-#         car_icon = cv2.resize(car_icon, (car_area_width, car_area_height))
-#         birds_eye_view[y_offset:y_offset + car_area_height, x_offset:x_offset + car_area_width] = car_icon
 
-#     # --- 5. Save and Display the Result ---
-#     cv2.imwrite("birds_eye_view.png", birds_eye_view)
-#     print("Bird's-eye view saved as 'birds_eye_view.png'")
-    
-    # cv2.imshow("Bird's Eye View", birds_eye_view)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+# --- Create the canvas and place the images using addition for blending ---
+birds_eye_view = np.zeros((output_height, output_width, 3), dtype=np.uint8)
+x_offset = w
+y_offset = h
+
+# --- Place FRONT image ---
+front_resized = cv2.resize(front_masked, (car_area_width, h))
+# Use cv2.add() to blend instead of direct assignment
+birds_eye_view[0:h, x_offset:x_offset + car_area_width] = cv2.add(
+    birds_eye_view[0:h, x_offset:x_offset + car_area_width], front_resized)
+
+# --- Place BACK image ---
+back_flipped = cv2.rotate(back_masked, cv2.ROTATE_180)
+back_resized = cv2.resize(back_flipped, (car_area_width, h))
+birds_eye_view[y_offset + car_area_height : y_offset + car_area_height + h, x_offset : x_offset + car_area_width] = cv2.add(
+    birds_eye_view[y_offset + car_area_height : y_offset + car_area_height + h, x_offset : x_offset + car_area_width], back_resized)
+
+# --- Place LEFT image ---
+# The vertical gradient becomes horizontal after rotation
+left_rotated = cv2.rotate(left_masked, cv2.ROTATE_90_COUNTERCLOCKWISE)
+left_resized = cv2.resize(left_rotated, (w, car_area_height))
+birds_eye_view[y_offset : y_offset + car_area_height, 0:w] = cv2.add(
+    birds_eye_view[y_offset : y_offset + car_area_height, 0:w], left_resized)
+
+# --- Place RIGHT image ---
+# The vertical gradient becomes horizontal after rotation
+right_rotated = cv2.rotate(right_masked, cv2.ROTATE_90_CLOCKWISE)
+right_resized = cv2.resize(right_rotated, (w, car_area_height))
+birds_eye_view[y_offset:y_offset + car_area_height, x_offset + car_area_width : x_offset + car_area_width + w] = cv2.add(
+    birds_eye_view[y_offset:y_offset + car_area_height, x_offset + car_area_width : x_offset + car_area_width + w], right_resized)
+
+# --- Optional: Add a car icon in the middle ---
+# You can uncomment this now if you have a 'car_icon.png'
+# car_icon = cv2.imread("car_icon.png")
+# if car_icon is not None:
+#     car_icon = cv2.resize(car_icon, (car_area_width, car_area_height))
+#     birds_eye_view[y_offset:y_offset + car_area_height, x_offset:x_offset + car_area_width] = car_icon
+
+# --- 5. Save and Display the Result ---
+cv2.imwrite("birds_eye_view.png", birds_eye_view)
+print("Bird's-eye view saved as 'birds_eye_view.png'")
+
+cv2.imshow("Bird's Eye View", birds_eye_view)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
